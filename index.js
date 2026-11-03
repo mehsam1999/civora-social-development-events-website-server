@@ -23,11 +23,10 @@ export async function connectToMongoDB() {
 }
 
 const mongoClient = await connectToMongoDB()
-
 const db = mongoClient.db("civora")
 const eventCollection = db.collection("upcomingEvent")
 
-
+// create-events
 app.post('/create-events', async(req,res)=>{
     const data =req.body
 
@@ -37,6 +36,12 @@ app.post('/create-events', async(req,res)=>{
     res.send(result)
 })
 
+// upcoming-events
+app.get('/upcoming-events', async(req,res)=>{
+  const apiResult = await eventCollection.find().toArray()
+  // console.log(apiResult)
+  res.send(apiResult)
+})
 
 app.get('/', (reeq,res)=>{
     res.send('server is running')
