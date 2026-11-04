@@ -61,6 +61,13 @@ app.patch('/upcoming-events/:id', async(req,res)=>{
   res.json(result)
 })
 
+// delete events 
+app.delete('/upcoming-events/:id', async(req,res)=>{
+  const {id} = req.params
+  const result = await eventCollection.deleteOne({_id: new ObjectId(id)})
+  res.json(result)
+})
+
 
 app.get('/', (req,res)=>{
     res.send('server is running')
