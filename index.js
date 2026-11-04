@@ -50,6 +50,17 @@ app.get('/upcoming-events/:id', async(req,res)=>{
   res.send(result)
 })
 
+// edit events
+app.patch('/upcoming-events/:id', async(req,res)=>{
+  const {id} = req.params
+  const updateddata = req.body
+  const result =  await eventCollection.updateOne(
+    {_id: new ObjectId(id)},
+    {$set: updateddata}
+  )
+  res.json(result)
+})
+
 
 app.get('/', (req,res)=>{
     res.send('server is running')
