@@ -41,7 +41,8 @@ app.post('/create-events', async(req,res)=>{
 
 // upcoming-events
 app.get('/upcoming-events', async(req,res)=>{
-  const apiResult = await eventCollection.find().toArray()
+  const today = new Date().toLocaleDateString("en-GB")
+  const apiResult = await eventCollection.find({ eventDate: { $gte: today } }).sort({ eventDate: 1 }).toArray() //greater than equal today's date
   // console.log(apiResult)
   res.send(apiResult)
 })
@@ -50,6 +51,14 @@ app.get('/upcoming-events', async(req,res)=>{
 app.get('/upcoming-events/:id', async(req,res)=>{
   const {id} = req.params
   const result = await eventCollection.findOne({_id: new ObjectId(id)})
+  res.send(result)
+})
+
+// recent-upcoming Events
+app.get('/recent-upcoming-events', async (req, res) =>{
+  const today = new Date().toLocaleDateString("en-GB")
+  const result = await eventCollection.find({ eventDate: { $gte: today } }).sort({ eventDate: 1 }).limit(6).toArray() //greater than equal today's date
+
   res.send(result)
 })
 
