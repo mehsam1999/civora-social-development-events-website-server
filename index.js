@@ -22,9 +22,12 @@ export async function connectToMongoDB() {
   }
 }
 
+// database
 const mongoClient = await connectToMongoDB()
 const db = mongoClient.db("civora")
 const eventCollection = db.collection("upcomingEvent")
+const joinedEventCollection = db.collection("joinedEvent")
+
 
 // create-events
 app.post('/create-events', async(req,res)=>{
@@ -66,6 +69,32 @@ app.delete('/upcoming-events/:id', async(req,res)=>{
   const {id} = req.params
   const result = await eventCollection.deleteOne({_id: new ObjectId(id)})
   res.json(result)
+})
+
+// joined events
+app.post('/joined-events', async(req, res) =>{
+  const data = req.body
+
+  const alreadyJoined = await joinedEventCollection.findOne({
+    email: data.email,
+    eventId: data.eventId
+  });
+
+  if (alreadyJoined) {
+    return res.status(409).send({
+      message: "You have already joined this event!"
+    });
+  }
+  
+  const result = await joinedEventCollection.insertOne(data)
+  // console.log(result)
+  res.send(result)
+})
+app.get('/joined-event/:email', async(req,res)=>{
+  const {email} = req.params
+  const result = await joinedEventCollection.find({email:email}).sort({eventDate: 1})
+    .toArray()
+  res.send(result)
 })
 
 
