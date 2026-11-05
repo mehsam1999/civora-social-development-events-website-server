@@ -2,6 +2,7 @@ import express from 'express'
 import { MongoClient, ObjectId } from 'mongodb';
 import 'dotenv/config'
 import cors from "cors"
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 const app = express()
 const PORT = 8000
 
@@ -28,9 +29,34 @@ const db = mongoClient.db("civora")
 const eventCollection = db.collection("upcomingEvent")
 const joinedEventCollection = db.collection("joinedEvent")
 
+const verifyToken = async(req, res, next)=>{
+  const authHeader = req.headers.authorization
+  console.log(authHeader)
+
+  if(!authHeader){
+    return res.status(401).send({ msg: 'Unauthorized!'})
+  }
+
+  const token = authHeader.split(" ")[1]
+  if(!token){
+    return res.status(401).send({ msg: 'Unauthorized!'})
+  }
+
+  const JWKS = createRemoteJWKSet(new URL(`${process.env.CLIENT_URL}/api/auth/jwks`))
+  try{
+    const {payload} = await jwtVerify(token, JWKS)
+    // console.log(payload)
+    next()
+  }
+  catch{
+    return res.status(500).send({ msg: 'Server Error!'})
+  }
+
+}
+
 
 // create-events
-app.post('/create-events', async(req,res)=>{
+app.post('/create-events', verifyToken, async(req,res)=>{
     const data =req.body
 
     const result = await eventCollection.insertOne(data)
@@ -63,16 +89,14 @@ app.get('/recent-upcoming-events', async (req, res) =>{
 })
 
 // manage-events
-app.get('/manage-events/:email', async(req, res) => {
+app.get('/manage-events/:email', verifyToken, async(req, res) => {
   const { email } = req.params;
   const result = await eventCollection.find({ email: email }).toArray();
 
   res.send(result);
 });
-
-
 // edit events
-app.patch('/upcoming-events/:id', async(req,res)=>{
+app.patch('/upcoming-events/:id', verifyToken, async(req,res)=>{
   const {id} = req.params
   const updateddata = req.body
   const result =  await eventCollection.updateOne(
@@ -81,16 +105,15 @@ app.patch('/upcoming-events/:id', async(req,res)=>{
   )
   res.json(result)
 })
-
 // delete events 
-app.delete('/upcoming-events/:id', async(req,res)=>{
+app.delete('/upcoming-events/:id', verifyToken, async(req,res)=>{
   const {id} = req.params
   const result = await eventCollection.deleteOne({_id: new ObjectId(id)})
   res.json(result)
 })
 
 // joined events
-app.post('/joined-events', async(req, res) =>{
+app.post('/joined-events', verifyToken, async(req, res) =>{
   const data = req.body
 
   const alreadyJoined = await joinedEventCollection.findOne({
@@ -108,7 +131,7 @@ app.post('/joined-events', async(req, res) =>{
   // console.log(result)
   res.send(result)
 })
-app.get('/joined-event/:email', async(req,res)=>{
+app.get('/joined-event/:email', verifyToken, async(req,res)=>{
   const {email} = req.params
   const result = await joinedEventCollection.find({email:email}).sort({eventDate: 1})
     .toArray()
@@ -123,3 +146,5 @@ app.get('/', (req,res)=>{
 app.listen(PORT, ()=>{
     console.log(`Server is running at ${PORT}`)
 })
+
+export default app
