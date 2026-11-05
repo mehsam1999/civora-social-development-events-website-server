@@ -53,6 +53,15 @@ app.get('/upcoming-events/:id', async(req,res)=>{
   res.send(result)
 })
 
+// manage-events
+app.get('/manage-events/:email', async(req, res) => {
+  const { email } = req.params;
+  const result = await eventCollection.find({ email: email }).toArray();
+
+  res.send(result);
+});
+
+
 // edit events
 app.patch('/upcoming-events/:id', async(req,res)=>{
   const {id} = req.params
